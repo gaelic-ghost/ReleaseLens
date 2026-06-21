@@ -124,7 +124,7 @@ dotnet build --configuration Release --no-restore
 dotnet test --configuration Release --no-build
 ```
 
-The solution contains one executable project and one xUnit test project. NuGet dependency graphs are committed as lock files and CI restores them in locked mode. The executable owns the domain modules because no second host or reusable package consumer exists yet. See [`Docs/ARCHITECTURE.md`](Docs/ARCHITECTURE.md) for the boundary decision.
+The solution contains one executable project and one xUnit test project. NuGet dependency graphs are committed as lock files, the SDK-provided FSharp.Core package version is pinned by the project, and CI restores dependencies in locked mode. The executable owns the domain modules because no second host or reusable package consumer exists yet. See [`Docs/ARCHITECTURE.md`](Docs/ARCHITECTURE.md) for the boundary decision.
 
 ## Next milestones
 
