@@ -29,7 +29,9 @@ module ChangeCategory =
         | Unknown(Some originalCategory) -> $"Unknown ({originalCategory})"
 
     let fromInput (value: string option) =
-        match value |> Option.map (fun category -> category.Trim().ToLowerInvariant()) with
+        let originalCategory = value |> Option.map _.Trim()
+
+        match originalCategory |> Option.map _.ToLowerInvariant() with
         | None
         | Some "" -> Unknown None
         | Some "breaking"
@@ -43,7 +45,7 @@ module ChangeCategory =
         | Some "security-fix"
         | Some "security_fix" -> SecurityFix
         | Some "fix" -> Fix
-        | Some originalCategory -> Unknown(Some originalCategory)
+        | Some _ -> Unknown originalCategory
 
 type ReleaseChange =
     { Id: string

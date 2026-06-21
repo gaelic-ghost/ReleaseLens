@@ -18,8 +18,22 @@ module ReportOutput =
         |> List.filter (fun assessed -> ChangeCategory.canonicalName assessed.Change.Category = category)
         |> List.length
 
-    let private markdownCell (value: string) =
-        value.Replace("\\", "\\\\").Replace("|", "\\|").Replace("\r", " ").Replace("\n", " ")
+    let private markdownText (value: string) =
+        let flattened =
+            value.Replace("\r\n", " ").Replace("\r", " ").Replace("\n", " ").Replace("\t", " ")
+
+        [ "\\", "\\\\"
+          "`", "\\`"
+          "*", "\\*"
+          "_", "\\_"
+          "[", "\\["
+          "]", "\\]"
+          "<", "\\<"
+          ">", "\\>"
+          "|", "\\|" ]
+        |> List.fold
+            (fun (text: string) (character: string, escaped: string) -> text.Replace(character, escaped))
+            flattened
 
     let renderMarkdown (report: RiskReport) =
         let summaryLines =
@@ -34,9 +48,9 @@ module ReportOutput =
             |> List.map (fun assessed ->
                 let change = assessed.Change
 
-                $"| {markdownCell change.Id} | {markdownCell change.Summary} | {markdownCell (ChangeCategory.displayName change.Category)} | {assessed.Score} | {markdownCell assessed.Explanation} |")
+                $"| {markdownText change.Id} | {markdownText change.Summary} | {markdownText (ChangeCategory.displayName change.Category)} | {assessed.Score} | {markdownText assessed.Explanation} |")
 
-        [ $"# Release risk report: {report.Release}"
+        [ $"# Release risk report: {markdownText report.Release}"
           ""
           $"- Risk: **{RiskLevel.displayName report.Level}**"
           $"- Score: **{report.Score} / 100**"

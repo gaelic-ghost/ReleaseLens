@@ -60,6 +60,8 @@ Write a report to a file:
 dotnet run --project src/ReleaseLens -- examples/release.json --output release-risk.md
 ```
 
+ReleaseLens creates output files with UTF-8 encoding and no byte-order mark. It refuses to overwrite an existing path, including the input file; choose a new path or remove the old report explicitly.
+
 Use `--help` for the complete CLI syntax.
 
 ## Input format
@@ -80,7 +82,9 @@ The input is one JSON object with a non-empty `release` string and a `changes` a
 }
 ```
 
-Each change requires a unique, non-empty `id` and `summary`. `category` and `details` are optional. Categories are case-insensitive and accept:
+Each change requires a unique, non-empty `id` and `summary`. Leading and trailing whitespace is removed before duplicate IDs are checked. Duplicate JSON property names are rejected because their meaning would otherwise be ambiguous. An empty `changes` array is valid and produces a Low, zero-point report that explicitly says no changes were supplied.
+
+`category` and `details` are optional. Categories are case-insensitive and accept:
 
 - `breaking`
 - `dependency`
@@ -88,7 +92,7 @@ Each change requires a unique, non-empty `id` and `summary`. `category` and `det
 - `security`
 - `fix`
 
-A missing or unrecognized category remains in the report as `unknown`; ReleaseLens preserves the original category text in JSON output so the result stays explainable.
+A missing or unrecognized category remains in the report as `unknown`; ReleaseLens preserves the trimmed original category text and casing in JSON output so the result stays explainable.
 
 See [`examples/release.json`](examples/release.json) for a complete input document.
 
@@ -97,6 +101,16 @@ See [`examples/release.json`](examples/release.json) for a complete input docume
 Markdown is the default human-readable output. It includes the overall risk, aggregate score, category counts, and a per-change explanation.
 
 JSON output uses a fixed property and collection order. Identical input produces byte-for-byte identical output, including its final newline.
+
+Markdown output flattens line breaks in inline values and escapes Markdown structure characters so input cannot add headings, links, HTML tags, or table columns.
+
+## Exit codes
+
+| Code | Meaning |
+| ---: | --- |
+| 0 | The report or help text was written successfully. |
+| 1 | Input reading, JSON validation, assessment output, or report writing failed. |
+| 2 | Command-line arguments were invalid. |
 
 ## Develop
 
