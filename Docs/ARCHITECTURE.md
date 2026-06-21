@@ -16,6 +16,18 @@ This shape keeps the useful core pure and testable while avoiding a speculative 
 
 Side effects remain at the edges. The parser, assessment, and rendering modules accept values and return values.
 
+## Domain model
+
+- `ChangeCategory` is a discriminated union for breaking changes, dependency changes, migrations, security fixes, ordinary fixes, and unknown input.
+- `ReleaseChange`, `ReleaseInput`, `AssessedChange`, and `RiskReport` are records that make each transformation boundary explicit.
+- `RiskLevel` is a discriminated union derived only from the aggregate score.
+
+The parser treats missing or unrecognized categories as domain data instead of discarding them or failing the entire release. Structural input problems—invalid JSON, missing required values, wrong JSON types, and duplicate IDs—return descriptive validation errors.
+
+## Determinism
+
+Assessment has no clock, environment, network, or random input. Both renderers preserve input change order. JSON properties and category summaries are written in a fixed order, and both output formats use line-feed newlines with one final newline.
+
 ## Project layout
 
 - `src/ReleaseLens`: executable and testable core modules
