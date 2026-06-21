@@ -1,0 +1,5 @@
+* text=auto eol=lf
+
+*.slnx text eol=lf
+*.fs text eol=lf
+*.fsproj text eol=lf
