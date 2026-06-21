@@ -4,5 +4,13 @@
     <FSharpCoreImplicitPackageVersion>10.1.300</FSharpCoreImplicitPackageVersion>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+
+    <!--
+      The F# SDK adds its bundled library-pack directory as an extra NuGet source.
+      Those repacked FSharp.Core artifacts can have platform- or SDK-specific
+      content hashes. Use the canonical NuGet.org artifact so lock files remain
+      portable across supported .NET 10 SDK patches and operating systems.
+    -->
+    <_FSharpCoreLibraryPacksFolder>$(MSBuildThisFileDirectory).fsharp-library-packs-disabled/</_FSharpCoreLibraryPacksFolder>
   </PropertyGroup>
 </Project>

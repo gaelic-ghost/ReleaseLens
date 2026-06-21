@@ -32,7 +32,7 @@ Assessment has no clock, environment, network, or random input. Both renderers p
 
 Markdown escapes structure-changing characters and flattens inline line breaks. File output uses UTF-8 without a byte-order mark and create-new semantics, so an existing destination is never overwritten.
 
-NuGet dependency graphs are committed as project lock files. The implicit FSharp.Core package version is project-pinned so allowed .NET SDK patches cannot silently change the locked graph. CI uses locked restore, immutable action commit references, a fixed Ubuntu runner generation, and Release builds to keep validation changes explicit.
+NuGet dependency graphs are committed as project lock files. The implicit FSharp.Core package version is project-pinned and resolved from NuGet.org instead of the SDK's repacked library artifact, whose content hash can differ across SDK builds or platforms. CI uses locked restore, immutable action commit references, a fixed Ubuntu runner generation, and Release builds to keep validation changes explicit.
 
 ## Project layout
 
