@@ -32,6 +32,8 @@ Assessment has no clock, environment, network, or random input. Both renderers p
 
 Markdown escapes structure-changing characters and flattens inline line breaks. File output uses UTF-8 without a byte-order mark and create-new semantics, so an existing destination is never overwritten.
 
+NuGet dependency graphs are committed as project lock files. CI uses locked restore, immutable action commit references, a fixed Ubuntu runner generation, and Release builds to keep validation changes explicit.
+
 ## Project layout
 
 - `src/ReleaseLens`: executable and testable core modules

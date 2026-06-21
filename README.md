@@ -32,7 +32,7 @@ ReleaseLens does not pretend this is a universal risk model. Its value is that t
 
 - [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 
-The repository targets .NET 10 LTS and pins the .NET 10 SDK family through `global.json`, allowing newer .NET 10 feature bands and patches.
+The repository targets .NET 10 LTS and pins the stable .NET 10 SDK family through `global.json`, allowing newer .NET 10 feature bands and patches while excluding preview SDKs.
 
 ## Run it
 
@@ -117,14 +117,14 @@ Markdown output flattens line breaks in inline values and escapes Markdown struc
 Run the repository checks serially:
 
 ```sh
-dotnet restore
+dotnet restore --locked-mode
 dotnet tool restore
 dotnet fantomas --check src tests
-dotnet build --no-restore
-dotnet test --no-build
+dotnet build --configuration Release --no-restore
+dotnet test --configuration Release --no-build
 ```
 
-The solution contains one executable project and one xUnit test project. The executable owns the domain modules because no second host or reusable package consumer exists yet. See [`Docs/ARCHITECTURE.md`](Docs/ARCHITECTURE.md) for the boundary decision.
+The solution contains one executable project and one xUnit test project. NuGet dependency graphs are committed as lock files and CI restores them in locked mode. The executable owns the domain modules because no second host or reusable package consumer exists yet. See [`Docs/ARCHITECTURE.md`](Docs/ARCHITECTURE.md) for the boundary decision.
 
 ## Next milestones
 

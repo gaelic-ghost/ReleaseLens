@@ -24,11 +24,11 @@ ReleaseLens is a small F# command-line application that turns structured release
 Run these commands serially:
 
 ```sh
-dotnet restore
+dotnet restore --locked-mode
 dotnet tool restore
 dotnet fantomas --check src tests
-dotnet build --no-restore
-dotnet test --no-build
+dotnet build --configuration Release --no-restore
+dotnet test --configuration Release --no-build
 ```
 
 Do not publish a NuGet package from this repository.
