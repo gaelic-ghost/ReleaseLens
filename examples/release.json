@@ -1,0 +1,26 @@
+{
+  "release": "2.0.0",
+  "changes": [
+    {
+      "id": "a12bc34",
+      "summary": "Remove the legacy authentication endpoint",
+      "category": "breaking",
+      "details": "Consumers must migrate to the token exchange endpoint."
+    },
+    {
+      "id": "d56ef78",
+      "summary": "Update the HTTP client dependency",
+      "category": "dependency"
+    },
+    {
+      "id": "901ab23",
+      "summary": "Patch authorization checks for project exports",
+      "category": "security"
+    },
+    {
+      "id": "456cd78",
+      "summary": "Correct release-note heading order",
+      "category": "fix"
+    }
+  ]
+}
