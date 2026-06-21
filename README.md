@@ -82,7 +82,7 @@ The input is one JSON object with a non-empty `release` string and a `changes` a
 }
 ```
 
-Each change requires a unique, non-empty `id` and `summary`. Leading and trailing whitespace is removed before duplicate IDs are checked. Duplicate JSON property names are rejected because their meaning would otherwise be ambiguous. An empty `changes` array is valid and produces a Low, zero-point report that explicitly says no changes were supplied.
+Each change requires a non-empty `id` and a non-empty `summary`. IDs must be unique; leading and trailing whitespace is removed before duplicate IDs are checked. Summaries do not need to be unique. Duplicate JSON property names are rejected because their meaning would otherwise be ambiguous. An empty `changes` array is valid and produces a Low, zero-point report that explicitly says no changes were supplied.
 
 `category` and `details` are optional. Categories are case-insensitive and accept:
 
