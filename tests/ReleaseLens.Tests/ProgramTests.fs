@@ -8,6 +8,8 @@ open Xunit
 let private validInput =
     """{"release":"1.0.0","changes":[{"id":"one","summary":"Fix","category":"fix"}]}"""
 
+let private inputLimit = 1_048_576
+
 let private run input arguments =
     use standardInput = new StringReader(input)
     use standardOutput = new StringWriter()
@@ -68,6 +70,34 @@ let ``program reads standard input and writes only the requested report to stand
     Assert.EndsWith("\n", standardOutput)
 
 [<Fact>]
+let ``program rejects standard input larger than the documented input limit`` () =
+    let oversizedInput = String('x', inputLimit + 1)
+
+    let exitCode, standardOutput, standardError = run oversizedInput [||]
+
+    Assert.Equal(1, exitCode)
+    Assert.Empty(standardOutput)
+    Assert.Contains("standard input", standardError)
+    Assert.Contains("1,048,576 characters", standardError)
+    Assert.Contains("Split the release input", standardError)
+
+[<Fact>]
+let ``program rejects file input larger than the documented input limit before parsing`` () =
+    withTemporaryDirectory (fun directory ->
+        let inputPath = Path.Combine(directory, "too-large.json")
+        let outputPath = Path.Combine(directory, "report.json")
+        File.WriteAllText(inputPath, String('x', inputLimit + 1))
+
+        let exitCode, standardOutput, standardError =
+            run "" [| inputPath; "--output"; outputPath |]
+
+        Assert.Equal(1, exitCode)
+        Assert.Empty(standardOutput)
+        Assert.Contains(inputPath, standardError)
+        Assert.Contains("1,048,576 bytes", standardError)
+        Assert.False(File.Exists(outputPath)))
+
+[<Fact>]
 let ``program returns distinct argument and input failure exit codes`` () =
     let argumentExitCode, argumentOutput, argumentError =
         run "" [| "--format"; "yaml" |]
@@ -98,3 +128,20 @@ let ``program creates a new UTF-8 output file with no byte order mark`` () =
         Assert.NotEmpty(bytes)
         Assert.NotEqual<byte array>([| 0xEFuy; 0xBBuy; 0xBFuy |], bytes |> Array.truncate 3)
         Assert.Equal(0x0Auy, bytes[bytes.Length - 1]))
+
+[<Fact>]
+let ``program removes temporary output files after a successful file write`` () =
+    withTemporaryDirectory (fun directory ->
+        let outputPath = Path.Combine(directory, "report.json")
+
+        let exitCode, standardOutput, standardError =
+            run validInput [| "--format"; "json"; "--output"; outputPath |]
+
+        let leftoverTemporaryFiles =
+            Directory.EnumerateFiles(directory, "*.tmp") |> Seq.toList
+
+        Assert.Equal(0, exitCode)
+        Assert.Empty(standardOutput)
+        Assert.Empty(standardError)
+        Assert.True(File.Exists(outputPath))
+        Assert.Empty(leftoverTemporaryFiles))

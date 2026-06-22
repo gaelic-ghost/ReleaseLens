@@ -8,7 +8,7 @@ This shape keeps the useful core pure and testable while avoiding a speculative 
 
 ## Data flow
 
-1. The CLI reads a JSON release document from a file or standard input.
+1. The CLI reads a bounded JSON release document from a file or standard input.
 2. The parser validates required fields and maps category text into explicit F# domain cases.
 3. The assessment pipeline assigns an explainable score to each change and derives an overall risk level.
 4. A renderer produces deterministic Markdown or JSON.
@@ -17,6 +17,8 @@ This shape keeps the useful core pure and testable while avoiding a speculative 
 Side effects remain at the edges. The parser, assessment, and rendering modules accept values and return values.
 
 `Program.run` receives explicit standard-input, standard-output, and standard-error streams. The executable entry point supplies the process console streams, while tests supply in-memory streams to verify content and exit codes without global console mutation.
+
+File input is rejected before parsing when it is larger than 1,048,576 bytes. Standard input is read in chunks and rejected after 1,048,576 characters. A true streaming parser would be a larger architecture pivot for this milestone because duplicate-property validation and whole-report scoring currently operate on one complete release document; the bounded guard keeps memory use explicit without broadening the product.
 
 ## Domain model
 
@@ -30,9 +32,9 @@ The parser treats missing or unrecognized categories as domain data instead of d
 
 Assessment has no clock, environment, network, or random input. Both renderers preserve input change order. JSON properties and category summaries are written in a fixed order, and both output formats use line-feed newlines with one final newline.
 
-Markdown escapes structure-changing characters and flattens inline line breaks. File output uses UTF-8 without a byte-order mark and create-new semantics, so an existing destination is never overwritten.
+Markdown escapes structure-changing characters and flattens inline line breaks. File output uses UTF-8 without a byte-order mark, create-new semantics, and a temporary sibling file that is moved into place only after the write completes. Existing destinations are never overwritten, and failed writes clean up the temporary file when the filesystem permits it.
 
-NuGet dependency graphs are committed as project lock files. The implicit FSharp.Core package version is project-pinned and resolved from NuGet.org instead of the SDK's repacked library artifact, whose content hash can differ across SDK builds or platforms. CI uses locked restore, immutable action commit references, a fixed Ubuntu runner generation, and Release builds to keep validation changes explicit.
+NuGet dependency graphs are committed as project lock files. The implicit FSharp.Core package version is project-pinned and resolved from NuGet.org instead of the SDK's repacked library artifact, whose content hash can differ across SDK builds or platforms. `DisableImplicitLibraryPacksFolder` prevents SDK-bundled library-pack directories from being added as implicit restore sources; if a future SDK changes that behavior, locked restore in CI should fail before a changed package hash is accepted. CI uses locked restore, immutable action commit references, a fixed Ubuntu runner generation, and Release builds to keep validation changes explicit.
 
 ## Project layout
 

@@ -5,37 +5,114 @@ open System.IO
 open System.Text
 
 module Program =
+    [<Literal>]
+    let private maxInputBytes = 1_048_576L
+
+    [<Literal>]
+    let private maxInputCharacters = 1_048_576
+
+    [<Literal>]
+    let private maxInputSizeDisplay = "1,048,576"
+
+    let private readStandardInputBounded (standardInput: TextReader) =
+        let buffer = Array.zeroCreate<char> 4096
+        let output = StringBuilder()
+        let mutable totalCharacters = 0
+        let mutable keepReading = true
+        let mutable tooLarge = false
+
+        while keepReading && not tooLarge do
+            let readCount = standardInput.Read(buffer, 0, buffer.Length)
+
+            if readCount = 0 then
+                keepReading <- false
+            else
+                totalCharacters <- totalCharacters + readCount
+
+                if totalCharacters > maxInputCharacters then
+                    tooLarge <- true
+                else
+                    output.Append(buffer, 0, readCount) |> ignore
+
+        if tooLarge then
+            Error
+                $"Reading release input from 'standard input' stopped because it is larger than {maxInputSizeDisplay} characters. Split the release input or keep only the changes for one release."
+        else
+            Ok(output.ToString())
+
+    let private readFileBounded path =
+        let fileInfo = FileInfo(path)
+
+        if fileInfo.Exists && fileInfo.Length > maxInputBytes then
+            Error
+                $"Reading release input from '{path}' stopped because the file is larger than {maxInputSizeDisplay} bytes. Split the release input or keep only the changes for one release."
+        else
+            Ok(File.ReadAllText(path))
+
     let private readInput (standardInput: TextReader) (inputPath: string option) =
         try
             match inputPath with
             | None
-            | Some "-" -> Ok(standardInput.ReadToEnd())
-            | Some path -> Ok(File.ReadAllText(path))
+            | Some "-" -> readStandardInputBounded standardInput
+            | Some path -> readFileBounded path
         with exceptionDetails ->
             let source = inputPath |> Option.defaultValue "standard input"
 
             Error
                 $"Reading release input from '{source}' failed because: {exceptionDetails.Message} Verify that the path exists and is readable."
 
+    let private temporarySiblingPath outputPath =
+        let fullPath = Path.GetFullPath(outputPath)
+        let directory = Path.GetDirectoryName(fullPath)
+        let fileName = Path.GetFileName(fullPath)
+
+        if String.IsNullOrWhiteSpace(directory) then
+            Path.Combine(Directory.GetCurrentDirectory(), $".{fileName}.{Guid.NewGuid():N}.tmp")
+        else
+            Path.Combine(directory, $".{fileName}.{Guid.NewGuid():N}.tmp")
+
+    let private tryDeleteTemporaryFile path =
+        try
+            if File.Exists(path) then
+                File.Delete(path)
+        with _ ->
+            ()
+
+    let private writeFileAtomic path (output: string) =
+        if File.Exists(path) || Directory.Exists(path) then
+            Error
+                $"Writing the release report to '{path}' was stopped because the destination already exists. Choose a different path or remove the existing file first."
+        else
+            let temporaryPath = temporarySiblingPath path
+
+            try
+                do
+                    use stream =
+                        new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.Write, FileShare.None)
+
+                    use writer = new StreamWriter(stream, UTF8Encoding(false))
+                    writer.Write(output)
+
+                File.Move(temporaryPath, path, false)
+                Ok()
+            with exceptionDetails ->
+                tryDeleteTemporaryFile temporaryPath
+
+                if File.Exists(path) || Directory.Exists(path) then
+                    Error
+                        $"Writing the release report to '{path}' was stopped because the destination already exists. Choose a different path or remove the existing file first."
+                else
+                    Error
+                        $"Writing the release report to '{path}' failed because: {exceptionDetails.Message} Verify that the destination directory exists and is writable."
+
     let private writeOutput (standardOutput: TextWriter) (outputPath: string option) (output: string) =
         try
             match outputPath with
-            | None -> standardOutput.Write(output)
-            | Some path ->
-                use stream =
-                    new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None)
-
-                use writer = new StreamWriter(stream, UTF8Encoding(false))
-                writer.Write(output)
-
-            Ok()
-        with
-        | :? IOException when outputPath |> Option.exists File.Exists ->
-            let destination = outputPath |> Option.defaultValue "standard output"
-
-            Error
-                $"Writing the release report to '{destination}' was stopped because the destination already exists. Choose a different path or remove the existing file first."
-        | exceptionDetails ->
+            | None ->
+                standardOutput.Write(output)
+                Ok()
+            | Some path -> writeFileAtomic path output
+        with exceptionDetails ->
             let destination = outputPath |> Option.defaultValue "standard output"
 
             Error

@@ -6,11 +6,12 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 
     <!--
-      The F# SDK adds its bundled library-pack directory as an extra NuGet source.
-      Those repacked FSharp.Core artifacts can have platform- or SDK-specific
-      content hashes. Use the canonical NuGet.org artifact so lock files remain
-      portable across supported .NET 10 SDK patches and operating systems.
+      The .NET/F# SDK can add bundled library-pack directories as implicit
+      restore sources. Those repacked FSharp.Core artifacts can have
+      platform- or SDK-specific content hashes. Disable that implicit source
+      and use the canonical NuGet.org artifact so lock files remain portable
+      across supported .NET 10 SDK patches and operating systems.
     -->
-    <_FSharpCoreLibraryPacksFolder>$(MSBuildThisFileDirectory).fsharp-library-packs-disabled/</_FSharpCoreLibraryPacksFolder>
+    <DisableImplicitLibraryPacksFolder>true</DisableImplicitLibraryPacksFolder>
   </PropertyGroup>
 </Project>

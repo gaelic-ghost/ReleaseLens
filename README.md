@@ -60,7 +60,7 @@ Write a report to a file:
 dotnet run --project src/ReleaseLens -- examples/release.json --output release-risk.md
 ```
 
-ReleaseLens creates output files with UTF-8 encoding and no byte-order mark. It refuses to overwrite an existing path, including the input file; choose a new path or remove the old report explicitly.
+ReleaseLens creates output files with UTF-8 encoding and no byte-order mark. It refuses to overwrite an existing path, including the input file; choose a new path or remove the old report explicitly. File output is written through a temporary sibling file and moved into place only after the report is complete, so a failed write does not leave a partial destination report behind.
 
 Use `--help` for the complete CLI syntax.
 
@@ -83,6 +83,8 @@ The input is one JSON object with a non-empty `release` string and a `changes` a
 ```
 
 Each change requires a non-empty `id` and a non-empty `summary`. IDs must be unique; leading and trailing whitespace is removed before duplicate IDs are checked. Summaries do not need to be unique. Duplicate JSON property names are rejected because their meaning would otherwise be ambiguous. An empty `changes` array is valid and produces a Low, zero-point report that explicitly says no changes were supplied.
+
+Input is intentionally bounded for this first CLI milestone. File input must be 1,048,576 bytes or smaller, and standard input must be 1,048,576 characters or smaller. Larger release documents should be split so one ReleaseLens run describes one release.
 
 `category` and `details` are optional. Categories are case-insensitive and accept:
 
@@ -124,7 +126,7 @@ dotnet build --configuration Release --no-restore
 dotnet test --configuration Release --no-build
 ```
 
-The solution contains one executable project and one xUnit test project. NuGet dependency graphs are committed as lock files, the FSharp.Core package version is pinned and resolved from the canonical NuGet.org artifact, and CI restores dependencies in locked mode. The executable owns the domain modules because no second host or reusable package consumer exists yet. See [`Docs/ARCHITECTURE.md`](Docs/ARCHITECTURE.md) for the boundary decision.
+The solution contains one executable project and one xUnit test project. NuGet dependency graphs are committed as lock files, the FSharp.Core package version is pinned, SDK-bundled library-pack restore sources are disabled with `DisableImplicitLibraryPacksFolder`, and CI restores dependencies in locked mode from NuGet.org. This keeps the lock-file content hash tied to the canonical NuGet.org artifact instead of an SDK repack. The executable owns the domain modules because no second host or reusable package consumer exists yet. See [`Docs/ARCHITECTURE.md`](Docs/ARCHITECTURE.md) for the boundary decision.
 
 ## Next milestones
 
